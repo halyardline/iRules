@@ -9,9 +9,4 @@ if { [expr {[TCP::client_port]} % {$divby}] != 0 } {
   reject
   return
 }
-#if { [expr {[TCP::client_port]} % 2] } {
-#  log local0. "Rejecting source port [TCP::client_port] not even [expr {[TCP::client_port]} % 2]"
-#  reject
-#  return
-#}
 }
