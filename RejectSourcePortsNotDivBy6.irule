@@ -1,12 +1,15 @@
+# Rejects source ports not equal to a number divisable by 6
+# Adds a space if the request comes in on TMM 0 so all the log output aligns.
+#
 when CLIENT_ACCEPTED {
-set divby 6
-if { [expr {[TCP::client_port]} % {$divby}] != 0 } {
-  if { [TMM::cmp_unit] == 0 } {
-    log local0. " Rejecting source port [TCP::client_port] not divisable by 6 remainder [expr {[TCP::client_port]} % {$divby}]"
-  } else {
-    log local0. "Rejecting source port [TCP::client_port] not divisable by 6 remainder [expr {[TCP::client_port]} % {$divby}]"
-  }
+  set divby 6
+  if { [expr {[TCP::client_port]} % {$divby}] != 0 } {
+    if { [TMM::cmp_unit] == 0 } {
+      log local0. " Rejecting source port [TCP::client_port] not divisable by 6 remainder [expr {[TCP::client_port]} % {$divby}]"
+    } else {
+      log local0. "Rejecting source port [TCP::client_port] not divisable by 6 remainder [expr {[TCP::client_port]} % {$divby}]"
+    }
   reject
   return
-}
+  }
 }
