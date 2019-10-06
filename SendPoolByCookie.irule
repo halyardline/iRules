@@ -1,0 +1,53 @@
+# Send traffic to specific pools by the if the source port is even or not.
+# Then save the Pool name in a header value.
+
+proc randomNumberGenerator {length {chars "0123456789"}} {
+  set range [expr {[string length $chars]-1}]
+  set txt ""
+  for {set i 0} {$i < $length} {incr i} {
+    set pos [expr {int(rand()*$range)}]
+    append txt [string range $chars $pos $pos]
+  }
+  return $txt
+}
+when HTTP_REQUEST {
+  set generatedNumber [call randomNumberGenerator 4]
+  set requesturi [HTTP::uri]
+  if { [HTTP::uri] contains "/item" } {
+    set pickpool "/Example/Example-HTTP-POOL"
+    log local0. "URI [HTTP::uri] Should go to Pool $pickpool Random Number $generatedNumber"
+  } else {
+    set pickpool "/Example/REMOTE-POOL"
+    log local0. "URI [HTTP::uri] Should go to Pool $pickpool Random Number $generatedNumber"
+  }
+  if { [HTTP::cookie exists "Cookie1"] } {
+    set pickpool [HTTP::cookie Cookie1]
+    if { [HTTP::uri] contains "/item" } {
+      set pickpool "/Example/Example-HTTP-POOL"
+    }
+    # Adding LB::detach to remove server side connection if we find a cookie
+#    LB::detach
+    catch { pool $pickpool }
+    log local0. "URI [HTTP::uri] Cookie Found value [HTTP::cookie Cookie1] Random Number $generatedNumber"
+    if { [catch { pool $pickpool }] != 0 } {
+      log local0. "ERROR: Attempting to assign traffic to non-existant pool $pickpool"
+      pool $pickpool
+      return
+    }
+  } else {
+	catch { pool $pickpool }
+    if { [catch { pool $pickpool }] != 0 } {
+      log local0. "Did not find cookie using pool $pickpool"
+      pool $pickpool
+    }
+    return
+  }
+}
+when HTTP_RESPONSE {
+if { $requesturi contains "/item" } {
+  HTTP::cookie insert name Cookie1 value "$pickpool" path $requesturi
+} else {
+  HTTP::cookie insert name Cookie1 value "$pickpool" path "/"
+  log local0. "Pool $pickpool Random Number $generatedNumber"
+}
+}
