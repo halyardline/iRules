@@ -44,10 +44,10 @@ when HTTP_REQUEST {
   }
 }
 when HTTP_RESPONSE {
-if { $requesturi contains "/item" } {
-  HTTP::cookie insert name Cookie1 value "$pickpool" path $requesturi
-} else {
-  HTTP::cookie insert name Cookie1 value "$pickpool" path "/"
-  log local0. "Pool $pickpool Random Number $generatedNumber"
-}
+  if { $requesturi contains "/item" } {
+    HTTP::cookie insert name Cookie1 value "$pickpool" path $requesturi
+  } else {
+   HTTP::cookie insert name Cookie1 value "$pickpool" path "/"
+   log local0. "Pool $pickpool Random Number $generatedNumber"
+  }
 }
