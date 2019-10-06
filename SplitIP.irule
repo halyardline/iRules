@@ -1,0 +1,21 @@
+proc dec2bin x {
+    if {[string index $x 0] eq {-}} {
+        set sign -
+        set x [string range $x 1 end]
+    } else {
+        set sign {}
+    }
+    return $sign[string trimleft [string map {
+    0 {000} 1 {001} 2 {010} 3 {011} 4 {100} 5 {101} 6 {110} 7 {111}
+    } [format %o $x]] 0]
+}
+when HTTP_REQUEST {
+    set clientIP [IP::client_addr]
+    scan $clientIP "%d.%d.%d.%d" first second third fourth
+    set first [call dec2bin $first]
+    set second [call dec2bin $second]
+    set third [call dec2bin $third]
+    set fourth [call dec2bin $fourth]
+    
+    log local0. "oct1: $first oct2: $second oct3: $third oct4: $fourth"
+}
