@@ -13,7 +13,8 @@ when HTTP_REQUEST {
    log local0. "The LB choice is: $mypick"
 }
 when HTTP_RESPONSE {
-    set resticks [clock clicks -milliseconds]
+    # Added function to proc to not need response ticks
+    # set resticks [clock clicks -milliseconds]
     set ticks [call responseTime $reqticks]
     log local0. "Between request and response is $ticks milliseconds"
 }
