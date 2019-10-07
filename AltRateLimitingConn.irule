@@ -1,0 +1,75 @@
+# Rate limiting iRule 2
+#
+when RULE_INIT {
+    # Environment
+    set static::localenv "stage"
+    set static::tbl "vsratelimit"
+    # Debug to /var/log/ltm? 1=yes, 0=no
+    set static::conn_debug 1
+    # Maximum connection rate
+    set static::conn_rate 2
+    # Time interval in seconds until entries expire for the source IP
+    set static::interval 28800
+    set static::whitelist /Example/dg_${static::localenv}_ratelimit
+    # Clear out subtables? 1=yes, 0=no
+    # Make sure the client has hit all the TMMs on the BIG-IP before setting back to 0
+    set static::cleartables 0
+
+    log local0. "Configured to enforce a rate of ${static::conn_rate} active connections per ${static::interval} seconds."
+}
+proc rateLimit { timeleft {countreq 0} } {
+    # Track this connection in a Subtable using the client IP:source port:destination port as a key
+    set key "[IP::client_addr]"
+    # Save the Source IP specific subtable name (vsratelimit_<Source IP>)
+    set usertbl ${static::tbl}_allusers
+    set current [table lookup -notouch -subtable $usertbl $key]
+    if { $timeleft == 0 } {
+        if { $countreq } {
+            if { $static::cleartables } {
+                if { $static::conn_debug }{ log local0. "Clearing out subtable for [IP::client_addr]" }
+                table delete -subtable $usertbl -all
+                return 0
+            }
+            return $current
+        }
+        # Lowering value by 1
+        if { $current >= 1 } {
+            table set -notouch -subtable $usertbl $key [expr {$current} - 1]
+            set current [expr {$current} - 1]
+            if { $static::conn_debug }{ log local0. "Lowered value for [IP::client_addr] by 1 to $current" }
+        }
+        return 0
+    } else {
+        if { $current == 0 } {
+            table set -subtable $usertbl $key 1 0 ${static::interval}
+            set current 1
+        } else {
+            set current [table incr -notouch -subtable $usertbl $key]
+            set remaintime [table lifetime -subtable $usertbl -remaining $key]
+            if { $static::conn_debug }{ log local0. "Added entry for $usertbl valid for $remaintime seconds." }
+        }
+        return $current
+    }
+}
+when CLIENT_ACCEPTED {
+    set current [call rateLimit 0 1]
+    if {[class match [IP::client_addr] equals ${static::whitelist}]} {
+        if { $static::conn_debug }{ log local0. "[IP::client_addr] Matched Whitelist has $current connections" }
+        call rateLimit ${static::interval}
+        ISTATS::incr "ltm.virtual [virtual name] counter [IP::client_addr]" 1
+    } elseif { $current >= $static::conn_rate} {
+        # We're over the rate limit, so reset the connection
+        if { $static::conn_debug }{ log local0. "[IP::local_addr]:[TCP::local_port] ([virtual name]). At limit, rejecting (current: $current / max: ${static::conn_rate} per ${static::interval} seconds)" }
+
+        TCP::respond "HTTP/1.1 503 ServiceUnavailable\r\nConnection: close\r\nContent-Type: application/xml\r\n\r\n<?xml version=\"1.0\" encoding=\"UTF-8\"?><Error><Code>ServiceUnavailable</Code><Message>Please Slow Down Too many HTTP connections (${current}) from [IP::client_addr]</Message></Error>\r\n"
+        TCP::close
+    } else {
+        # We're under the virtual server connection rate limit
+        if { $static::conn_debug }{ log local0. "[IP::local_addr]:[TCP::local_port] ([virtual name]). Under limit (current: $current / max: ${static::conn_rate} active connections per ${static::interval} seconds)" }
+        # Add entry to table
+        call rateLimit ${static::interval}
+    }
+}
+when CLIENT_CLOSED {
+    call rateLimit 0
+}
