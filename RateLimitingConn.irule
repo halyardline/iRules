@@ -40,11 +40,9 @@ when CLIENT_ACCEPTED {
         if { $static::conn_debug }{ log local0. "[IP::client_addr] Matched Whitelist has $current connections" }
         call rateLimit ${static::interval}
         ISTATS::incr "ltm.virtual [virtual name] counter [IP::client_addr]" 1
-    } elseif { $current >= $static::interval} {
+    } elseif { $current >= $static::conn_rate} {
         # We're over the rate limit, so reset the connection
         if { $static::conn_debug }{ log local0. "[IP::local_addr]:[TCP::local_port] ([virtual name]). At limit, rejecting (current: $current / max: ${static::conn_rate} per ${static::interval} seconds)" }
-        # Add entry to table
-        call rateLimit ${static::interval}
 
         TCP::respond "HTTP/1.1 503 ServiceUnavailable\r\nConnection: close\r\nContent-Type: application/xml\r\n\r\n<?xml version=\"1.0\" encoding=\"UTF-8\"?><Error><Code>ServiceUnavailable</Code><Message>Please Slow Down Too many HTTP connections (${current}) from [IP::client_addr]</Message></Error>\r\n"
         TCP::close
