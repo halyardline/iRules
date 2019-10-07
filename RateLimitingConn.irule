@@ -31,7 +31,7 @@ proc rateLimit { {timeleft 0} } {
     }
 }
 when CLIENT_ACCEPTED {
-    set current [call rateLimit ${static::conn_rate}]
+    set current [call rateLimit ${static::interval}]
     if {[class match [IP::client_addr] equals ${static::whitelist}]} {
         if { $static::conn_debug }{ log local0. "[IP::client_addr] Matched Whitelist has $current connections" }
         ISTATS::incr "ltm.virtual [virtual name] counter [IP::client_addr]" 1
