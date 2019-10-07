@@ -52,11 +52,11 @@ proc rateLimit { timeleft {countreq 0} } {
         return 0
     } else {
         if { $current == 0 } {
-            table set -subtable $usertbl $key 1 0 ${static::interval}
+            table set -subtable $usertbl $key 1 ${static::interval} indef
             set current 1
         } else {
             set current [table incr -notouch -subtable $usertbl $key]
-            set remaintime [table lifetime -subtable $usertbl -remaining $key]
+            set remaintime [table timeout -subtable $usertbl -remaining $key]
             if { $static::conn_debug }{ log local0. "Added entry for $usertbl valid for $remaintime seconds." }
         }
         return $current
