@@ -12,7 +12,7 @@ when RULE_INIT {
     set static::interval 28800
     set static::whitelist /Example/dg_${static::localenv}_ratelimit
 
-    log local0. "Configured to enforce a rate of ${static::conn_rate} connections per ${static::interval} seconds."
+    log local0. "Configured to enforce a rate of ${static::conn_rate} active connections per ${static::interval} seconds."
 }
 proc rateLimit { {timeleft 0} } {
     # Track this connection in a Subtable using the client IP:source port:destination port as a key
@@ -43,7 +43,7 @@ when CLIENT_ACCEPTED {
         TCP::close
     } else {
         # We're under the virtual server connection rate limit
-        if { $static::conn_debug }{ log local0. "[IP::local_addr]:[TCP::local_port] ([virtual name]). Under limit (current: $current / max: ${static::conn_rate} per ${static::interval} seconds)" }
+        if { $static::conn_debug }{ log local0. "[IP::local_addr]:[TCP::local_port] ([virtual name]). Under limit (current: $current / max: ${static::conn_rate} active connection per ${static::interval} seconds)" }
     }
 }
 when CLIENT_CLOSED {
