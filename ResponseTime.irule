@@ -3,6 +3,6 @@ when HTTP_REQUEST {
 }
 when HTTP_RESPONSE {
     set resticks [clock clicks -milliseconds]
-    set ticks [expr ${resticks} - ${reqticks}]
+    set ticks [expr {$resticks} - {$reqticks}]
     log local0. "Clock $ticks The LB choice is: $mypick"
 }
