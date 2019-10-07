@@ -26,7 +26,7 @@ proc rateLimit { timeleft {countreq 0} } {
     if { $timeleft == 0 } {
         if { $countreq } {
             if { $static::cleartables } {
-                log local0. "Clearing out subtable for [IP::client_addr]"
+                if { $static::conn_debug }{ log local0. "Clearing out subtable for [IP::client_addr]" }
                 table delete -subtable $usertbl -all
                 return 0
             }
