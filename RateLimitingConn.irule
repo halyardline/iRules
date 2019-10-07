@@ -48,5 +48,5 @@ when CLIENT_ACCEPTED {
 }
 when CLIENT_CLOSED {
     # remove the table entry for the port
-    catch [call rateLimit]
+    [call rateLimit]
 }
