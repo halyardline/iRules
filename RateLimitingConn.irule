@@ -35,7 +35,7 @@ when CLIENT_ACCEPTED {
     if {[class match [IP::client_addr] equals ${static::whitelist}]} {
         if { $static::conn_debug }{ log local0. "[IP::client_addr] Matched Whitelist has $current connections" }
         ISTATS::incr "ltm.virtual [virtual name] counter [IP::client_addr]" 1
-    } elseif { $current >= $static::conn_rate} {
+    } elseif { $current >= $static::interval} {
         # We're over the rate limit, so reset the connection
         if { $static::conn_debug }{ log local0. "[IP::local_addr]:[TCP::local_port] ([virtual name]). At limit, rejecting (current: $current / max: ${static::conn_rate} per ${static::interval} seconds)" }
 
