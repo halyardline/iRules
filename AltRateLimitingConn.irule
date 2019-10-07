@@ -6,7 +6,7 @@
 # Use this command then wait 15 seconds to clear the iStats from BASH.
 # istats drop_row 'ltm.virtual /Example/Example-HTTP-VS'
 #
-# If you want the timer for the subtable entry to reset every request change 
+# If you want the timer for the subtable entry to reset every request change line 36
 # set current [table lookup -notouch -subtable $usertbl $key]
 # TO
 # set current [table lookup -subtable $usertbl $key]
