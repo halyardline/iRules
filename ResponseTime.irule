@@ -1,5 +1,9 @@
 proc responseTime {a {b 0}} {
     set c [expr {$a} - {$b}]
+    set ticksnow [clock clicks -milliseconds]
+    if {$b == 0} {
+        set c [expr {$ticksnow} - {$a}]
+    }
     return $c
 }
 when HTTP_REQUEST {
@@ -10,6 +14,6 @@ when HTTP_REQUEST {
 }
 when HTTP_RESPONSE {
     set resticks [clock clicks -milliseconds]
-    set ticks [call responseTime $resticks $reqticks]
+    set ticks [call responseTime $reqticks]
     log local0. "Between request and response is $ticks milliseconds"
 }
