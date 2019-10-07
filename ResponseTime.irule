@@ -1,0 +1,8 @@
+when HTTP_REQUEST {
+   set reqticks [clock clicks -milliseconds]
+}
+when HTTP_RESPONSE {
+    set resticks [clock clicks -milliseconds]
+    set ticks [expr ${resticks} - ${reqticks}]
+    log local0. "Clock $ticks The LB choice is: $mypick"
+}
