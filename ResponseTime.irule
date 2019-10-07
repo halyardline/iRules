@@ -1,8 +1,15 @@
+proc responseTime {a {b 0}} {
+    set c [expr {$a} - {$b}]
+    return $c
+}
 when HTTP_REQUEST {
    set reqticks [clock clicks -milliseconds]
+   set mypick [LB::select]
+   eval $mypick
+   log local0. "The LB choice is: $mypick"
 }
 when HTTP_RESPONSE {
     set resticks [clock clicks -milliseconds]
-    set ticks [expr {$resticks} - {$reqticks}]
-    log local0. "Clock $ticks The LB choice is: $mypick"
+    set ticks [call responseTime $resticks $reqticks]
+    log local0. "Between request and response is $ticks milliseconds"
 }
