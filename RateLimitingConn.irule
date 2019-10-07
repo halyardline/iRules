@@ -14,16 +14,20 @@ when RULE_INIT {
 
     log local0. "Configured to enforce a rate of ${static::conn_rate} active connections per ${static::interval} seconds."
 }
-proc rateLimit { {timeleft 0} } {
+proc rateLimit { timeleft {countreq 0} } {
     # Track this connection in a Subtable using the client IP:source port:destination port as a key
     set key "[IP::client_addr]:[TCP::local_port]:[TCP::client_port]"
     # Save the Source IP specific subtable name (vsratelimit_<Source IP>)
     set usertbl ${static::tbl}_[IP::client_addr]
     # Check number of entries in the subtable
     set current [table keys -subtable $usertbl -count]
-    if { $timeleft == 0} {
+    if { $timeleft == 0 } {
+        if { $countreq } {
+            return $current
+        }
         table delete -subtable $usertbl $key
         if { $static::conn_debug }{ log local0. "Removed entry for $usertbl $key" }
+        return 0
     } else {
         table set -subtable $usertbl $key " " indefinite $timeleft
         if { $static::conn_debug }{ log local0. "Added entry for $usertbl valid for $timeleft seconds." }
@@ -31,22 +35,26 @@ proc rateLimit { {timeleft 0} } {
     }
 }
 when CLIENT_ACCEPTED {
-    set current [call rateLimit ${static::interval}]
+    set current [call rateLimit 0 1]
     if {[class match [IP::client_addr] equals ${static::whitelist}]} {
         if { $static::conn_debug }{ log local0. "[IP::client_addr] Matched Whitelist has $current connections" }
+        call rateLimit ${static::interval}
         ISTATS::incr "ltm.virtual [virtual name] counter [IP::client_addr]" 1
     } elseif { $current >= $static::interval} {
         # We're over the rate limit, so reset the connection
         if { $static::conn_debug }{ log local0. "[IP::local_addr]:[TCP::local_port] ([virtual name]). At limit, rejecting (current: $current / max: ${static::conn_rate} per ${static::interval} seconds)" }
+        # Add entry to table
+        call rateLimit ${static::interval}
 
         TCP::respond "HTTP/1.1 503 ServiceUnavailable\r\nConnection: close\r\nContent-Type: application/xml\r\n\r\n<?xml version=\"1.0\" encoding=\"UTF-8\"?><Error><Code>ServiceUnavailable</Code><Message>Please Slow Down Too many HTTP connections (${current}) from [IP::client_addr]</Message></Error>\r\n"
         TCP::close
     } else {
         # We're under the virtual server connection rate limit
-        if { $static::conn_debug }{ log local0. "[IP::local_addr]:[TCP::local_port] ([virtual name]). Under limit (current: $current / max: ${static::conn_rate} active connection per ${static::interval} seconds)" }
+        if { $static::conn_debug }{ log local0. "[IP::local_addr]:[TCP::local_port] ([virtual name]). Under limit (current: $current / max: ${static::conn_rate} active connections per ${static::interval} seconds)" }
+        # Add entry to table
+        call rateLimit ${static::interval}
     }
 }
 when CLIENT_CLOSED {
-    # remove the table entry for the port
-    [call rateLimit]
+    call rateLimit 0
 }
