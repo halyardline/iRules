@@ -12,7 +12,7 @@ when RULE_INIT {
     set static::interval 28800
     set static::whitelist /Example/dg_${static::localenv}_ratelimit
     # Clear out subtables? 1=yes, 0=no
-    set static::cleartables 1
+    set static::cleartables 0
 
     log local0. "Configured to enforce a rate of ${static::conn_rate} active connections per ${static::interval} seconds."
 }
