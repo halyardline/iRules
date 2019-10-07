@@ -1,5 +1,11 @@
 # Rate limiting iRule 2
 #
+# Use this command to view the iStats from BASH.
+# tmsh show ltm virtual /Example/Example-HTTP-VS
+#
+# Use this command then wait 15 seconds to clear the iStats from BASH.
+# istats drop_row 'ltm.virtual /Example/Example-HTTP-VS'
+#
 when RULE_INIT {
     # Environment
     set static::localenv "stage"
