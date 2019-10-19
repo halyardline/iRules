@@ -1,0 +1,9 @@
+when SERVER_CONNECTED {
+   clientside { set clientrtt [expr {double([TCP::rtt]) / 32}] }
+   set serverrtt [expr {double([TCP::rtt]) / 32}]
+   
+   clientside { set clientsrc [TCP::remote_port] }
+   clientside { set clientdst [TCP::local_port] }
+   
+   log "Client RTT $clientrtt ms ; Client $clientsrc to $clientdst ; Server RTT $serverrtt ; Server [TCP::local_port] to [TCP::remote_port]"
+}
