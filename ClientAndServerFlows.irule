@@ -1,0 +1,9 @@
+when SERVER_CONNECTED {
+    # Get server side flow handle.
+    set cf [FLOW::this]
+    # Get client side flow handle.
+    set peer [FLOW::peer $cf]
+    log local0. "My flow is $cf"
+    log local0. "Peer flow is $peer"
+    unset cf peer
+}
