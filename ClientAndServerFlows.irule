@@ -1,3 +1,7 @@
+#
+# bigip-a info tmm1[15888]: Rule /Common/Flows <SERVER_CONNECTED>: My flow is 10.128.1.159,30270,10.128.20.150,80,4011,6
+# bigip-a info tmm1[15888]: Rule /Common/Flows <SERVER_CONNECTED>: Peer flow is 10.1.20.150,5555,10.1.20.1,59095,4010,6
+#
 when SERVER_CONNECTED {
     # Get server side flow handle.
     set cf [FLOW::this]
